@@ -36,7 +36,7 @@ static int errors = 0;  // maybe we will use as member of ZIDCache later...
 /**
  * A poor man's factory.
  *
- * The build process must not allow to implementation classes linked
+ * The build process must not allow two cache file implementation classes linked
  * into the same library.
  */
 
