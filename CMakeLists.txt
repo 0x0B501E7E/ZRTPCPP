@@ -19,41 +19,39 @@ SET(CPACK_PACKAGE_VERSION_PATCH 0)
 set (VERSION 3.0.0)
 set (SOVERSION 3)
 
-include(cmake/Modules/AutoArgs.cmake)
-
-# Define supported -Denable-* command line parameters.
+# Define supported command line parameters.
 #
-# Example to build the tivi client: cmake -Denable-tivi=true ..
+# Example to build the tivi client: cmake -DTIVI=true ..
 # Without any options cmake generates libzrtpcpp for use with GNU ccRTP
 #
-enable_arg(ccrtp false "Build library to use with GNU ccRTP.")
-enable_arg(crypto_standalone false "Use embedded crypto and big number modules.")
-enable_arg(tivi false "Build library for the tivi client, implies '-Denable-crypto_standalone=true'.")
-enable_arg(sqlite false "Use SQLite DB as backend for ZRTP cache.")
-args_help()
+option(CCRTP "Build library to use with GNU ccRTP." OFF)
+option(CRYPTO_STANDALONE "Use embedded crypto and big number modules." ON)
+option(TIVI "Build library for the tivi client, implies '-DCRYPTO_STNDALONE=true'." OFF)
+option(SQLITE "Use SQLite DB as backend for ZRTP cache." OFF)
+
+option(ANDROID "Generate Android makefiles (Android.mk)" ON)
+option(JAVA "Generate Java support files (requires JDK and SWIG)" OFF)
+
 
 # **** Check what and how to build ****
 #
-if (enable_ccrtp AND enable_tivi)
+if (CCRTP AND TIVI)
     MESSAGE(FATAL_ERROR "Cannot build more than one client at once. Use different build directories.")
 endif()
 
-if (enable_ccrtp)
+if (CCRTP)
     set (PACKAGE libzrtpcpp)
     set(zrtplibName zrtpcpp)
-elseif (enable_tivi)
+elseif (TIVI)
     set (PACKAGE libzrtptivi)
     set(zrtplibName zrtptivi)
-    set (enable_crypto_standalone true)
+    set(CRYPTO_STANDALONE true)
+    set(SQLITE true)
 else()
     MESSAGE(WARNING "No client defined, building for GNU ccRTP.")
     set (PACKAGE libzrtpcpp)
-    set(enable_ccrtp true)
+    set(CCRTP true)
     set(zrtplibName zrtpcpp)
-endif()
-
-if (enable_crypto_standalone)
-    set(CRYPTO_STANDALONE TRUE)
 endif()
 
 
@@ -90,7 +88,7 @@ endif()
 check_include_files(stdlib.h HAVE_STDLIB_H)
 check_include_files(string.h HAVE_STRING_H)
 
-if (NOT enable_crypto_standalone)
+if (NOT CRYPTO_STANDALONE)
     pkg_check_modules(OPENSSL libcrypto>=0.9.8)
     if (OPENSSL_FOUND)
       set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${OPENSSL_INCLUDE_DIRS}) #update include files search directory
@@ -132,7 +130,7 @@ else()
     configure_file(${CMAKE_SOURCE_DIR}/bnlib/bnconfig.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/bnconfig.h)
 endif()
 
-if (enable_sqlite)
+if (SQLITE)
     pkg_check_modules(SQLITE3 sqlite3>=3.7)
     if (SQLITE3_FOUND)
         check_include_files(sqlite3.h HAVE_SQLITE_H)
@@ -154,16 +152,16 @@ endif()
 
 include_directories(BEFORE ${CMAKE_BINARY_DIR})
 include_directories (${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/zrtp)
-if(enable_standalone)
+if(CRYPTO_STANDALONE)
     include_directories (${CMAKE_SOURCE_DIR}/bnlib)
+endif()
+
+if (NOT CCRTP)
+    set (sdes_src ${CMAKE_SOURCE_DIR}/zrtp/ZrtpSdesStream.cpp)
 endif()
 
 # **** The following source files a common for all clients ****
 #
-if (NOT enable_ccrtp)
-    set (sdes_src ${CMAKE_SOURCE_DIR}/zrtp/ZrtpSdesStream.cpp)
-endif()
-
 set(zrtp_src_no_cache
     ${CMAKE_SOURCE_DIR}/zrtp/ZrtpCallbackWrapper.cpp
     ${CMAKE_SOURCE_DIR}/zrtp/ZRtp.cpp
@@ -187,6 +185,8 @@ set(zrtp_src_no_cache
     ${CMAKE_SOURCE_DIR}/zrtp/ZrtpConfigure.cpp
     ${CMAKE_SOURCE_DIR}/zrtp/ZrtpCWrapper.cpp
     ${CMAKE_SOURCE_DIR}/zrtp/Base32.cpp
+    ${CMAKE_SOURCE_DIR}/zrtp/zrtpB64Encode.c
+    ${CMAKE_SOURCE_DIR}/zrtp/zrtpB64Decode.c
     ${CMAKE_SOURCE_DIR}/common/osSpecifics.c ${sdes_src})
 
 set(bnlib_src
@@ -200,8 +200,7 @@ set(bnlib_src
     ${CMAKE_SOURCE_DIR}/bnlib/jacobi.c
     ${CMAKE_SOURCE_DIR}/bnlib/germain.c
     ${CMAKE_SOURCE_DIR}/bnlib/ec/ec.c
-    ${CMAKE_SOURCE_DIR}/bnlib/ec/ecdh.c
-    ${CMAKE_SOURCE_DIR}/bnlib/bnprint.c)
+    ${CMAKE_SOURCE_DIR}/bnlib/ec/ecdh.c)
 
 set(zrtp_crypto_src
     ${CMAKE_SOURCE_DIR}/zrtp/crypto/zrtpDH.cpp
@@ -213,7 +212,7 @@ set(zrtp_crypto_src
     ${CMAKE_SOURCE_DIR}/zrtp/crypto/twoCFB.cpp
     ${CMAKE_SOURCE_DIR}/zrtp/crypto/sha2.c)
 
-if (NOT enable_sqlite)
+if (NOT SQLITE)
     set(zrtp_src ${zrtp_src_no_cache}
         ${CMAKE_SOURCE_DIR}/zrtp/ZIDCacheFile.cpp
         ${CMAKE_SOURCE_DIR}/zrtp/ZIDRecordFile.cpp)
@@ -221,18 +220,16 @@ else()
     set(zrtp_src ${zrtp_src_no_cache}
         ${CMAKE_SOURCE_DIR}/zrtp/ZIDCacheDb.cpp
         ${CMAKE_SOURCE_DIR}/zrtp/ZIDRecordDb.cpp
-        ${CMAKE_SOURCE_DIR}/zrtp/zrtpB64Encode.c
-        ${CMAKE_SOURCE_DIR}/zrtp/zrtpB64Decode.c
         ${CMAKE_SOURCE_DIR}/zrtp/zrtpCacheSqliteBackend.c)
 
 endif()
 
-if (enable_ccrtp)
+if (CCRTP)
     add_subdirectory(clients/ccrtp)
     add_subdirectory(demo)
 endif()
 
-if (enable_tivi)
+if (TIVI)
     add_subdirectory(clients/tivi)
 endif()
 

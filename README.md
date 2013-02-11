@@ -25,6 +25,12 @@ preshared mode are not supported but the GNU ZRTP C++ implementation defines
 the necessary external interfaces and functions for these enhanced features
 (stubs only).
 
+### SDES support
+This release also provides SDES support. The SDES implementation does not
+support all of the fancy stuff but is usable in most cases. This implementation
+however supports the new SDES crypto mixing to overcome some security issues
+for SIP forking. Please look for `draft-zimmermann-mmusic-sdesc-mix-00`.
+
 ### Interoperability
 During the development of ZRTP and its sister implementation ZRTP4J (the Java
 version of the ZRTP) Phil Zimmermann, his developers, and I worked together to
@@ -48,7 +54,7 @@ To enable C based code to use ZRTP C++ I did a C wrapper that offers the same
 functionality to C based RTP implementations. The first use of the ZRTP C
 wrapper was for the [PJSIP][] library, actually the RTP part of this
 library. The ZRTP handler for PJSIP is [here][pjzrtp]. This port enables PJSIP
-based clients to use ZRTP. One of the first clients that use this feature is
+based clients to use ZRTP. One of the first clients that uses this feature is
 *[CSipSimple][]*, an very good open source Android SIP client.
 
 [pjsip]: http://www.pjsip.org
@@ -71,12 +77,17 @@ following versions of Twinkle include GNU ZRTP C++ as well.
 
 
 ### License and further information
-Please note, this library is licensed under the GNU GPL, version 3 or 
-later, and has been copyright assigned to the Free Software Foundation.
+Please note, most this library is licensed under the GNU GPL, version 3 or 
+later.
 
 For further information refer to the [ZRTP FAQ][zrtpfaq] and the
 [GNU ZRTP howto][zrtphow]. Both are part of the GNU Telephony wiki and are
 located in its documentation category.
+
+Source code in the directory `clients/tivi` and below is not licensed under the
+GNU GPL and is for reference and review only. Refer to the copyright statments
+of the source code in these directories, in particular the sqlite3 sources which
+have their own license.
 
 [zrtphow]:  http://www.gnutelephony.org/index.php/GNU_ZRTP_How_To
 [zrtpfaq]:  http://www.gnutelephony.org/index.php/ZRTP_FAQ
@@ -93,7 +104,19 @@ the source archive or pulled the source from [Github][]:
 	cd build
 	cmake ..
 	make
-	
+
+The CMakeLists.txt supports several options. If you don't specify any options
+then `cmake` generates the build that supports GNU ccRTP library and it uses
+the standalone cryptographic modules, thus no it's not necessary to install an
+cryptographic library on the system. Optionally you may configure ZRTP to use
+_sqlite3_ instead of a simple file to store the ZRTP cache data. For example
+
+    cmake -DSQLITE=true ..
+
+creates the build files that use _sqlite3_.
+
+Please have a look at the `CMakeLists.txt` for other options.
+
 Running cmake in a separate `build` directory is the preferred way. Cmake and
 the following `make` generate all files in or below the build directory. Thus
 the base directory and the source directories are not polluted with `*.o`,
