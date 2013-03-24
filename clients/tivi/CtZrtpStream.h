@@ -49,6 +49,14 @@ protected:
     CtZrtpSession::streamType  type;       //!< Master or slave stream. Necessary to handle multi-stream
     ZRtp              *zrtpEngine;         //!< The ZRTP core class of this stream
     uint32_t          ownSSRC;             //!< Our own SSRC, in host order
+
+    uint64_t          zrtpProtect;
+    uint64_t          sdesProtect;
+
+    uint64_t          zrtpUnprotect;
+    uint64_t          sdesUnprotect;
+    uint64_t          unprotectFailed;
+
     bool              enableZrtp;          //!< Enable the streams ZRTP engine
     bool              started;             //!< This stream's ZRTP engine is started
     bool              isStopped;           //!< Stream stopped by Tivi
@@ -139,7 +147,7 @@ protected:
      * @return 1: success, 0: not an error but drop packet, -1: SRTP authentication failed,
      *            -2: SRTP replay check failed
      */
-    int32_t processIncomingRtp(uint8_t *buffer, size_t length, size_t *newLength);
+    int32_t processIncomingRtp(uint8_t* buffer, const size_t length, size_t* newLength);
 
     /**
      * @brief Get the ZRTP Hello hash to be used for signaling
@@ -386,9 +394,6 @@ private:
     char sdesTempBuffer[maxSdesString];
     uint16_t senderZrtpSeqNo;
     uint32_t peerSSRC;
-    uint64_t protect;
-    uint64_t unprotect;
-    uint64_t unprotectFailed;
     std::string peerHelloHash;
     bool     zrtpHashMatch;
     bool     sasVerified;
@@ -400,6 +405,8 @@ private:
     CMutexClass *synchLock;
 
     char mixAlgoName[20];                   //!< stores name in during getInfo() call
+
+    int role;                               //!< Initiator or Responder role
 
     void initStrings();
 };

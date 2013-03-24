@@ -13,10 +13,10 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(libzrtpcpp)
 
 SET(CPACK_PACKAGE_VERSION_MAJOR 3)
-SET(CPACK_PACKAGE_VERSION_MINOR 0)
+SET(CPACK_PACKAGE_VERSION_MINOR 1)
 SET(CPACK_PACKAGE_VERSION_PATCH 0)
 
-set (VERSION 3.0.0)
+set (VERSION 3.1.0)
 set (SOVERSION 3)
 
 # Define supported command line parameters.
@@ -226,8 +226,9 @@ endif()
 
 if (CCRTP)
     add_subdirectory(clients/ccrtp)
-    add_subdirectory(demo)
 endif()
+
+add_subdirectory(demo)
 
 if (TIVI)
     add_subdirectory(clients/tivi)
