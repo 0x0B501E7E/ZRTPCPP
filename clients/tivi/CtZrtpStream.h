@@ -10,6 +10,7 @@
 #define _CTZRTPSTREAM_H_
 
 #include <map>
+#include <vector>
 
 #include <libzrtpcpp/ZrtpCallback.h>
 #include <libzrtpcpp/ZrtpSdesStream.h>
@@ -159,9 +160,12 @@ protected:
      *                  The method fills it with the hex string part of the ZRTP hello hash and
      *                  terminates it with a @c nul byte.
      *
+     * @param index  Hello hash of the Hello packet identfied by index. Index must 
+     *               be 0 <= index < getNumberSupportedVersions().
+     *
      * @return the number of characters in the @c helloHash buffer.
      */
-    int getSignalingHelloHash(char *helloHash);
+    int getSignalingHelloHash(char *helloHash, int32_t index);
 
     /**
      * @brief Set the ZRTP Hello hash from signaling
@@ -340,6 +344,44 @@ protected:
      */
     bool setCryptoMixAttribute(const char *algoNames);
 
+    /**
+     * @brief Reset SDES
+     * 
+     * This method deletes an existing SDES context unconditionally. The application must make
+     * sure that it does not use the SDES context in any way, for example feeding RTP or SRTP packets
+     * to this stream.
+     */
+    void resetSdesContext();
+
+    /**
+     * @brief Get number of supported ZRTP protocol versions.
+     *
+     * @return the number of supported ZRTP protocol versions.
+     */
+    int32_t getNumberSupportedVersions();
+
+    /**
+     * @brief Get the supported ZRTP encapsulation attribute.
+     * 
+     * Get this attribute value and set it as a SDP parameter to signal support of ZRTP encapsulation.
+     *
+     * @return the pointer to the attribute cC-string or @c NULL if encapsulation is not supported.
+     */
+    const char* getZrtpEncapAttribute();
+
+    /**
+     * @brief Set the ZRTP encapsulation attribute.
+     * 
+     * If an application receives the ZRTP encapsulation SDP attribute then it should set the
+     * attribute value. The stream uses ZRTP encapsulation only if this SDP parameter is set
+     * @b and SDES is available and active.
+     * 
+     * @param attribute pointer to a C-string that defines the ZRTP encapsulation method.
+     *
+     * @see getZrtpEncapAttribute
+     */
+    void setZrtpEncapAttribute(const char *attribute);
+
     /*
      * The following methods implement the GNU ZRTP callback interface.
      * For detailed documentation refer to file ZrtpCallback.h
@@ -394,14 +436,21 @@ private:
     char sdesTempBuffer[maxSdesString];
     uint16_t senderZrtpSeqNo;
     uint32_t peerSSRC;
-    std::string peerHelloHash;
+    std::vector<std::string> peerHelloHashes;
     bool     zrtpHashMatch;
     bool     sasVerified;
     bool     helloReceived;
     bool     sdesActive;
+    bool     useZrtpTunnel;
+    bool     zrtpEncapSignaled;
     ZrtpSdesStream *sdes;
+
     uint32_t supressCounter;
-    uint32_t srtpErrorBurst;
+    uint32_t srtpAuthErrorBurst;
+    uint32_t srtpReplayErrorBurst;
+    uint32_t srtpDecodeErrorBurst;
+    uint32_t zrtpCrcErrors;
+
     CMutexClass *synchLock;
 
     char mixAlgoName[20];                   //!< stores name in during getInfo() call
